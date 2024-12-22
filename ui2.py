@@ -22,6 +22,8 @@ with open('notes.json', 'r', encoding='utf-8') as file:
 
 note_name = ''
 tag_name = ''
+check = 1
+check2 = 1
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -127,6 +129,11 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.show_note()
 
+        self.btn_add_tag.setEnabled(False)
+        self.btn_delete_tag.setEnabled(False)
+        self.btn_save_note.setEnabled(False)
+        self.btn_delete_note.setEnabled(False)
+
         self.list_for_notes.itemClicked.connect(self.show)
         self.list_for_notes.itemClicked.connect(self.show_tags)
 
@@ -138,6 +145,9 @@ class Ui_MainWindow(object):
         self.btn_delete_tag.clicked.connect(self.del_tag)
         self.btn_search_tags.clicked.connect(self.search_by_tag)
         self.btn_search_names.clicked.connect(self.search_by_name)
+
+        self.list_for_notes.itemClicked.connect(self.selected_name)
+        self.list_for_tags.itemClicked.connect(self.selected_tag)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -193,6 +203,7 @@ class Ui_MainWindow(object):
             self.text_edit.clear()  
             self.list_for_tags.clear()
             self.show_tags
+            self.selected_name()
 
     def save_note(self):
         if self.list_for_notes.currentItem():
@@ -222,6 +233,7 @@ class Ui_MainWindow(object):
 
     def search_by_tag(self):
         if self.btn_search_tags.text() == 'Шукати замітки по тегу':
+            self.btn_search_names.setEnabled(False)
             search = self.line_search_tag.text()
             filtered_notes = {}
             for _ in data.keys():
@@ -233,27 +245,77 @@ class Ui_MainWindow(object):
             self.list_for_notes.addItems(filtered_notes.keys())
             self.btn_search_tags.setText('Скинути пошук')
         else:
+            self.btn_search_names.setEnabled(True)
             self.list_for_notes.clear()
             self.list_for_tags.clear()
             self.text_edit.clear()
             self.show_note()
             self.btn_search_tags.setText('Шукати замітки по тегу')
+        
+        self.selected_name()
 
     def search_by_name(self):
         if self.btn_search_names.text() == 'Шукати замітки по назві':
-            search = self.line_search_tag.text()
+            self.btn_search_tags.setEnabled(False)
+            search = self.line_search_tag.text().strip().lower()
             self.list_for_notes.clear()
             self.list_for_tags.clear()
             self.text_edit.clear()
-            if search in data:
-                self.list_for_notes.addItem(search)
+
+            suggest = [note for note in data.keys() if note.lower().startswith(search)]
+            if suggest:
+                self.list_for_notes.addItems(suggest)
+
             self.btn_search_names.setText('Скинути пошук')
         else:
+            self.btn_search_tags.setEnabled(True)
             self.list_for_notes.clear()
             self.list_for_tags.clear()
             self.text_edit.clear()
             self.show_note()
             self.btn_search_names.setText('Шукати замітки по назві')
+        
+        self.selected_name()
+
+    def selected_name(self):
+        global check
+        if check == 0:
+            self.btn_add_tag.setEnabled(False)
+            self.btn_delete_tag.setEnabled(False)
+            self.btn_save_note.setEnabled(False)
+            self.btn_delete_note.setEnabled(False)
+            check = 1
+
+            self.list_for_notes.itemClicked.connect(self.selected_name)
+
+        elif check == 1:
+            self.btn_add_tag.setEnabled(True)
+            self.btn_save_note.setEnabled(True)
+            self.btn_delete_note.setEnabled(True)
+            self.btn_delete_tag.setEnabled(True)
+
+            check = 0
+
+            self.list_for_notes.itemClicked.disconnect(self.selected_name)
+
+    def selected_tag(self):
+        if check2 == 0:
+            self.btn_delete_tag.setEnabled(False)
+
+            self.list_for_tags.itemClicked.connect(self.selected_tag)
+            
+            check2 == 1
+
+        elif check2 == 1:
+            self.btn_delete_tag.setEnabled(True)
+
+            self.list_for_tags.itemClicked.disconnect(self.selected_tag)
+
+            check2 == 0
+
+
+
+
 
 
 if __name__ == "__main__":
