@@ -7,6 +7,7 @@
 
 
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtGui import QFont
 
 import json
 
@@ -22,8 +23,6 @@ with open('notes.json', 'r', encoding='utf-8') as file:
 
 note_name = ''
 tag_name = ''
-check = 1
-check2 = 1
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -119,13 +118,13 @@ class Ui_MainWindow(object):
         self.btn_search_tags = QtWidgets.QPushButton(parent=self.widget)
         self.btn_search_tags.setObjectName("btn_search_tags")
         self.verticalLayout.addWidget(self.btn_search_tags)
-        self.line_search_tag = QtWidgets.QLineEdit(parent=self.widget)
+        self.line_search = QtWidgets.QLineEdit(parent=self.widget)
         font = QtGui.QFont()
         font.setPointSize(8)
-        self.line_search_tag.setFont(font)
-        self.line_search_tag.setText("")
-        self.line_search_tag.setObjectName("line_search_tag")
-        self.verticalLayout.addWidget(self.line_search_tag)
+        self.line_search.setFont(font)
+        self.line_search.setText("")
+        self.line_search.setObjectName("line_search_tag")
+        self.verticalLayout.addWidget(self.line_search)
         MainWindow.setCentralWidget(self.centralwidget)
         self.show_note()
 
@@ -147,10 +146,24 @@ class Ui_MainWindow(object):
         self.btn_search_names.clicked.connect(self.search_by_name)
 
         self.list_for_notes.itemClicked.connect(self.selected_name)
+        self.btn_delete_note.clicked.connect(self.selected_name)
+        self.btn_search_tags.clicked.connect(self.selected_name)
+        self.btn_search_names.clicked.connect(self.selected_name)
+
+        self.btn_delete_tag.clicked.connect(self.selected_tag)
         self.list_for_tags.itemClicked.connect(self.selected_tag)
+        self.list_for_notes.itemClicked.connect(self.selected_tag)
+
+        self.line_search.textChanged.connect(self.filled_in_search_bar)
+
+        self.btn_uscale.clicked.connect(self.upscale)
+        self.btn_dscale.clicked.connect(self.downscale)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        self.load_font_size()
+        self.apply_font_size()
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -166,7 +179,7 @@ class Ui_MainWindow(object):
         self.btn_delete_tag.setText(_translate("MainWindow", "Відкріпити від замітки"))
         self.btn_search_names.setText(_translate("MainWindow", "Шукати замітки по назві"))
         self.btn_search_tags.setText(_translate("MainWindow", "Шукати замітки по тегу"))
-        self.line_search_tag.setPlaceholderText(_translate("MainWindow", "Введіть тег або назву замітки..."))
+        self.line_search.setPlaceholderText(_translate("MainWindow", "Введіть тег або назву замітки..."))
 
     def show_note(self):
         global data
@@ -218,8 +231,8 @@ class Ui_MainWindow(object):
         if self.list_for_notes.currentItem():
             if tag_name and ok:
                 if tag_name and not (tag_name in data[self.list_for_notes.currentItem().text()]['теги']):
-                    data[self.list_for_notes.currentItem().text()]['теги'].append(tag_name)
-                    self.list_for_tags.addItem(tag_name)
+                    data[self.list_for_notes.currentItem().text()]['теги'].append(tag_name.lower())
+                    self.list_for_tags.addItem(tag_name.lower())
                     with open('notes.json', 'w', encoding='utf-8') as file:
                         json.dump(data, file, sort_keys=True)
 
@@ -234,7 +247,7 @@ class Ui_MainWindow(object):
     def search_by_tag(self):
         if self.btn_search_tags.text() == 'Шукати замітки по тегу':
             self.btn_search_names.setEnabled(False)
-            search = self.line_search_tag.text()
+            search = self.line_search.text().lower()
             filtered_notes = {}
             for _ in data.keys():
                 if search in data[_]['теги']:
@@ -244,6 +257,7 @@ class Ui_MainWindow(object):
             self.text_edit.clear()
             self.list_for_notes.addItems(filtered_notes.keys())
             self.btn_search_tags.setText('Скинути пошук')
+            self.line_search.setReadOnly(True)
         else:
             self.btn_search_names.setEnabled(True)
             self.list_for_notes.clear()
@@ -251,13 +265,12 @@ class Ui_MainWindow(object):
             self.text_edit.clear()
             self.show_note()
             self.btn_search_tags.setText('Шукати замітки по тегу')
-        
-        self.selected_name()
+            self.line_search.setReadOnly(False)
 
     def search_by_name(self):
         if self.btn_search_names.text() == 'Шукати замітки по назві':
             self.btn_search_tags.setEnabled(False)
-            search = self.line_search_tag.text().strip().lower()
+            search = self.line_search.text().strip().lower()
             self.list_for_notes.clear()
             self.list_for_tags.clear()
             self.text_edit.clear()
@@ -267,6 +280,7 @@ class Ui_MainWindow(object):
                 self.list_for_notes.addItems(suggest)
 
             self.btn_search_names.setText('Скинути пошук')
+            self.line_search.setReadOnly(True)
         else:
             self.btn_search_tags.setEnabled(True)
             self.list_for_notes.clear()
@@ -274,48 +288,68 @@ class Ui_MainWindow(object):
             self.text_edit.clear()
             self.show_note()
             self.btn_search_names.setText('Шукати замітки по назві')
-        
-        self.selected_name()
+            self.line_search.setReadOnly(False)
 
     def selected_name(self):
-        global check
-        if check == 0:
-            self.btn_add_tag.setEnabled(False)
-            self.btn_delete_tag.setEnabled(False)
-            self.btn_save_note.setEnabled(False)
-            self.btn_delete_note.setEnabled(False)
-            check = 1
-
-            self.list_for_notes.itemClicked.connect(self.selected_name)
-
-        elif check == 1:
+        if self.list_for_notes.selectedItems():
             self.btn_add_tag.setEnabled(True)
             self.btn_save_note.setEnabled(True)
             self.btn_delete_note.setEnabled(True)
-            self.btn_delete_tag.setEnabled(True)
-
-            check = 0
-
-            self.list_for_notes.itemClicked.disconnect(self.selected_name)
-
-    def selected_tag(self):
-        if check2 == 0:
+        else:
+            self.btn_add_tag.setEnabled(False)
+            self.btn_save_note.setEnabled(False)
+            self.btn_delete_note.setEnabled(False)
             self.btn_delete_tag.setEnabled(False)
 
-            self.list_for_tags.itemClicked.connect(self.selected_tag)
-            
-            check2 == 1
-
-        elif check2 == 1:
+    def selected_tag(self):
+        if self.list_for_tags.selectedItems():
             self.btn_delete_tag.setEnabled(True)
+        else:
+            self.btn_delete_tag.setEnabled(False)
 
-            self.list_for_tags.itemClicked.disconnect(self.selected_tag)
+    def filled_in_search_bar(self):
+        if self.line_search.text() == '':
+            self.btn_search_names.setEnabled(False)
+            self.btn_search_names.setEnabled(False)
+        else:
+            self.btn_search_names.setEnabled(True)
+            self.btn_search_names.setEnabled(True)
 
-            check2 == 0
+    def load_font_size(self):
+        try:
+            with open('size.txt', 'r') as file:
+                size = int(file.read().strip())
+                self.font_size = max(6, min(size, 11))
+        except:
+            self.font_size = 8 
+            with open('size.txt', 'w') as file:
+                file.write(str(self.font_size))
 
+    def save_font_size(self):
+        with open('size.txt', 'w') as file:
+            file.write(str(self.font_size))
 
+    def apply_font_size(self):
+        font = QFont()
+        font.setPointSize(self.font_size)
+        self.text_edit.setFont(font)
+        self.list_for_notes.setFont(font)
+        self.list_for_tags.setFont(font)
+        self.line_search.setFont(font)
+        self.btn_search_names.setFont(font)
+        self.btn_search_tags.setFont(font)
 
+    def upscale(self):
+        if self.font_size < 11:
+            self.font_size += 1
+            self.save_font_size()
+            self.apply_font_size()
 
+    def downscale(self):
+        if self.font_size > 6:
+            self.font_size -= 1
+            self.save_font_size()
+            self.apply_font_size()
 
 
 if __name__ == "__main__":
