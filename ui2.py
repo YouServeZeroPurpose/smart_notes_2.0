@@ -132,6 +132,7 @@ class Ui_MainWindow(object):
         self.btn_delete_tag.setEnabled(False)
         self.btn_save_note.setEnabled(False)
         self.btn_delete_note.setEnabled(False)
+        self.text_edit.setReadOnly(True)
 
         self.list_for_notes.itemClicked.connect(self.show)
         self.list_for_notes.itemClicked.connect(self.show_tags)
@@ -295,11 +296,13 @@ class Ui_MainWindow(object):
             self.btn_add_tag.setEnabled(True)
             self.btn_save_note.setEnabled(True)
             self.btn_delete_note.setEnabled(True)
+            self.text_edit.setReadOnly(False)
         else:
             self.btn_add_tag.setEnabled(False)
             self.btn_save_note.setEnabled(False)
             self.btn_delete_note.setEnabled(False)
             self.btn_delete_tag.setEnabled(False)
+            self.text_edit.setReadOnly(True)
 
     def selected_tag(self):
         if self.list_for_tags.selectedItems():
@@ -338,6 +341,13 @@ class Ui_MainWindow(object):
         self.line_search.setFont(font)
         self.btn_search_names.setFont(font)
         self.btn_search_tags.setFont(font)
+        self.btn_create_note.setFont(font)
+        self.btn_delete_note.setFont(font)
+        self.btn_save_note.setFont(font)
+        self.btn_add_tag.setFont(font)
+        self.btn_delete_tag.setFont(font)
+        self.lb_notes.setFont(font)
+        self.lb_tags.setFont(font)
 
     def upscale(self):
         if self.font_size < 11:
